@@ -35,6 +35,113 @@
     "2025": 66.0,
     "2026": 119.0
   },
+  "gas_share_model": {
+    "explanatory": [
+      {
+        "spec": "static",
+        "tanh_scale_eur_mwh": 30.0,
+        "n": 93,
+        "coef_tanh_gap_pp": 12.2985,
+        "hac_se": 1.5804,
+        "t_stat": 7.7819,
+        "r2": 0.5959,
+        "pp_per_eur_at_0": 0.4099,
+        "swing_pp_-20_+20": 14.3347,
+        "coef_share_lag": null
+      },
+      {
+        "spec": "static_seasonal",
+        "tanh_scale_eur_mwh": 30.0,
+        "n": 93,
+        "coef_tanh_gap_pp": 11.766,
+        "hac_se": 1.338,
+        "t_stat": 8.7934,
+        "r2": 0.6422,
+        "pp_per_eur_at_0": 0.3922,
+        "swing_pp_-20_+20": 13.714,
+        "coef_share_lag": null
+      },
+      {
+        "spec": "within_year",
+        "tanh_scale_eur_mwh": 30.0,
+        "n": 93,
+        "coef_tanh_gap_pp": 10.9702,
+        "hac_se": 1.7744,
+        "t_stat": 6.1823,
+        "r2": 0.7294,
+        "pp_per_eur_at_0": 0.3657,
+        "swing_pp_-20_+20": 12.7865,
+        "coef_share_lag": null
+      },
+      {
+        "spec": "arx",
+        "tanh_scale_eur_mwh": 30.0,
+        "n": 92,
+        "coef_tanh_gap_pp": 7.1258,
+        "hac_se": 1.2239,
+        "t_stat": 5.822,
+        "r2": 0.7068,
+        "pp_per_eur_at_0": 0.2375,
+        "swing_pp_-20_+20": 8.3055,
+        "coef_share_lag": 0.4707
+      }
+    ],
+    "forecast_oos_months": "2021-01 .. 2026-09 (69)",
+    "forecast_scores": [
+      {
+        "model": "ar1",
+        "rmse_pp": 6.2212,
+        "mae_pp": 4.8406,
+        "bias_pp": -0.1383,
+        "rmse_vs_persistence": -0.0255
+      },
+      {
+        "model": "arx",
+        "rmse_pp": 6.2244,
+        "mae_pp": 4.8348,
+        "bias_pp": -0.9295,
+        "rmse_vs_persistence": -0.025
+      },
+      {
+        "model": "persistence",
+        "rmse_pp": 6.3837,
+        "mae_pp": 4.8329,
+        "bias_pp": -0.0209,
+        "rmse_vs_persistence": 0.0
+      },
+      {
+        "model": "static",
+        "rmse_pp": 7.4641,
+        "mae_pp": 5.8234,
+        "bias_pp": -0.6045,
+        "rmse_vs_persistence": 0.1692
+      },
+      {
+        "model": "static_seasonal",
+        "rmse_pp": 8.3975,
+        "mae_pp": 6.2052,
+        "bias_pp": -1.1962,
+        "rmse_vs_persistence": 0.3155
+      },
+      {
+        "model": "calendar_mean",
+        "rmse_pp": 10.876,
+        "mae_pp": 9.1074,
+        "bias_pp": -1.8165,
+        "rmse_vs_persistence": 0.7037
+      }
+    ],
+    "leave_one_year_out_static_rmse_pp": {
+      "2019": 7.475,
+      "2020": 11.086,
+      "2021": 5.124,
+      "2022": 6.134,
+      "2023": 7.028,
+      "2024": 6.42,
+      "2025": 6.992,
+      "2026": 4.21
+    }
+  },
   "annual": {
     "2019": {
       "hours": 8760,

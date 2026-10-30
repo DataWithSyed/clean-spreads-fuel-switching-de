@@ -13,3 +13,16 @@ year
 Spearman(gas share, coal-gas SRMC gap) = 0.522; vs (EUA - switch price) = 0.522; within-year = 0.641
 Gas share of gas+hard coal: 61.1% when gas cheaper vs 52.1% when coal cheaper
 EUA needed for gas cheaper in >=50% of months: {2019: 0.0, 2020: 0.0, 2021: 37.0, 2022: None, 2023: 67.0, 2024: 47.0, 2025: 66.0, 2026: 119.0}
+Gas share model [static]: tanh scale 30, coef 12.30 pp (HAC se 1.58, t 7.8), R2 0.596, 0.410 pp per EUR/MWh at gap 0, swing -20..+20 EUR/MWh 14.3 pp
+Gas share model [static_seasonal]: tanh scale 30, coef 11.77 pp (HAC se 1.34, t 8.8), R2 0.642, 0.392 pp per EUR/MWh at gap 0, swing -20..+20 EUR/MWh 13.7 pp
+Gas share model [within_year]: tanh scale 30, coef 10.97 pp (HAC se 1.77, t 6.2), R2 0.729, 0.366 pp per EUR/MWh at gap 0, swing -20..+20 EUR/MWh 12.8 pp
+Gas share model [arx]: tanh scale 30, coef 7.13 pp (HAC se 1.22, t 5.8), R2 0.707, 0.238 pp per EUR/MWh at gap 0, swing -20..+20 EUR/MWh 8.3 pp
+Out-of-sample one-step forecasts 2021-01..2026-09 (n=69):
+          model  rmse_pp  mae_pp  bias_pp  rmse_vs_persistence
+            ar1    6.221   4.841   -0.138               -0.025
+            arx    6.224   4.835   -0.929               -0.025
+    persistence    6.384   4.833   -0.021                0.000
+         static    7.464   5.823   -0.605                0.169
+static_seasonal    8.398   6.205   -1.196                0.315
+  calendar_mean   10.876   9.107   -1.816                0.704
+Leave-one-year-out RMSE (static spec), pp: 2019: 7.48, 2020: 11.09, 2021: 5.12, 2022: 6.13, 2023: 7.03, 2024: 6.42, 2025: 6.99, 2026: 4.21

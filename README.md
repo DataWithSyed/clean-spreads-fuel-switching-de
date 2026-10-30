@@ -10,6 +10,8 @@ gas / hard-coal generation. From these it computes:
 * the monthly **fuel-switching CO2 price**, the EUA level at which gas and coal SRMC are equal, together with an efficiency band,
 * an **EUA sweep** that shows how high a carbon price would have been needed each year for gas to beat coal,
 * a **reality check** that tests whether the actual German merit order (gas share of gas + hard-coal output) follows the modelled SRMC gap,
+* a **statistical model of the gas share vs. the spread** (saturating regression with HAC errors) and an honest
+  **out-of-sample forecast test** against naive baselines,
 * the **hour-of-day shape** of spreads (solar cannibalisation) and a simple hourly **spread-option gross margin**.
 
 > Plant parameters (efficiencies, VOM, coal freight) are **illustrative fleet assumptions**, not data for a specific unit.
@@ -51,6 +53,15 @@ flexible 1 MW unit (no start costs, ramping or outages), so it is an upper bound
   (Energy-Charts actual output) has a Spearman ρ of **0.52** with the modelled coal-minus-gas SRMC gap. After removing each year's mean,
   which controls for slow structural change such as coal-plant closures, ρ rises to **0.64**. The gas share averaged **61.1 %** in months where gas was cheaper
   and **52.1 %** where coal was cheaper.
+* **The spread explains the gas share, but does not help forecast it beyond last month's value.** A saturating fit
+  `share = a + b·tanh(gap / 30 €/MWh) + controls` gives b = **11.0 pp** (Newey-West s.e. 1.8, t = 6.2) even with
+  month-of-year and year fixed effects (R² 0.73), i.e. about **0.37 pp of gas share per €/MWh** near the switching point
+  and **≈13 pp** between a month where coal is 20 €/MWh cheaper and one where gas is 20 €/MWh cheaper. Out of sample
+  (one month ahead, Jan 2021 – Sep 2026, refitted each month on past data only), adding the gap to last month's share
+  does not beat an AR(1) on the share alone (RMSE **6.22 vs 6.22 pp**); both are only **2.5 %** better than plain
+  persistence (6.38 pp), and gap-only models are worse (7.46 pp). So the spread is a real driver, but month to month
+  the share is mostly persistent and the rest is driven by things this data does not contain (CHP heat demand,
+  outages, wind/solar, imports, closures).
 * **Solar is reshaping the spreads.** In 2026 the average midday (13:00) clean spark spread is about **−97 €/MWh**, while the evening
   peak (20:00) is about **+38 €/MWh**. Thermal value now sits in the evening ramp, which is also where BESS competes.
 
@@ -70,6 +81,9 @@ flexible 1 MW unit (no start costs, ramping or outages), so it is an upper bound
 
 **Reality check: actual gas share vs. modelled SRMC gap**
 ![Gas share vs SRMC gap](figures/gas_share_vs_srmc_gap.png)
+
+**Statistical model of the gas share and out-of-sample forecast check**
+![Gas share model](figures/gas_share_model.png)
 
 **Spreads by hour of day** (solar cannibalisation of midday hours)
 ![Hour of day](figures/spreads_hour_of_day.png)
@@ -101,6 +115,14 @@ switching price    EUA* = (F_gas − F_coal) / (c_coal − c_gas)      gas is ch
 * **Reality check.** Monthly mean gas and hard-coal net generation (Energy-Charts public net generation) is used to form the gas share of gas + hard coal,
   which is then rank-correlated with S_coal − S_gas. Lignite is excluded because it has no traded fuel price; its SRMC is
   mine-mouth and largely carbon-driven.
+* **Gas-share model** (`src/spreads/regression.py`). Gas share (pp) is regressed on `tanh(gap / s)`, where gap = coal SRMC − gas SRMC,
+  because switching saturates (the 2022 gap reached −324 €/MWh). Four specifications: + linear trend; + month-of-year + trend;
+  + month-of-year + year fixed effects (explanatory only); + last month's share + trend (ARX). Standard errors are
+  Newey-West (3 lags). The scale s is picked from {10, 20, 30, 50, 100} €/MWh by in-sample fit (30 in the full sample).
+  **Forecast test:** expanding window starting Jan 2021 (24 training months), refitted every month on past data only, with s
+  re-selected inside each training window; the gap of the predicted month is treated as known (a nowcast given that month's
+  fuel and carbon prices). Baselines: persistence (last month), AR(1), same-calendar-month mean. A leave-one-year-out
+  check of the trend model is also written (`results/gas_share_leave_one_year_out.csv`; RMSE 4.2–11.1 pp by year, worst 2020).
 
 ## Assumptions
 
@@ -144,12 +166,13 @@ python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\act
 pip install -r requirements.txt
 python run_all.py              # first run downloads ~45 MB into data/raw/ (cached), then ~5 s
 python run_all.py --refresh    # force re-download
-pytest -q                      # 7 unit tests
+pytest -q                      # 11 unit tests
 ```
 
 Outputs: `results/summary.json` (headline numbers), `results/annual_summary.csv`, `results/monthly_srmc_switching.csv`,
 `results/monthly_generation_vs_spread.csv`, `results/css_hour_of_day.csv`, `results/cds_hour_of_day.csv`,
-`results/run_log.txt`, and the seven figures in `figures/`.
+`results/gas_share_regression.csv`, `results/gas_share_forecast_oos.csv`, `results/gas_share_forecast_scores.csv`,
+`results/gas_share_leave_one_year_out.csv`, `results/run_log.txt`, and the eight figures in `figures/`.
 
 ## Repository layout
 
@@ -158,6 +181,7 @@ config/assumptions.yaml   # plant parameters, emission factors, EUA reference pr
 src/spreads/
   data.py                 # download + cache: Energy-Charts, World Bank Pink Sheet, ECB FX
   model.py                # SRMC, clean spreads, switching price, EUA sweep, generation check
+  regression.py           # gas share vs SRMC gap: HAC regression, expanding-window forecast test
   plots.py                # figures
 run_all.py                # end-to-end pipeline
 tests/test_model.py       # unit tests (unit conversions, SRMC equality at EUA*, band ordering, sweep)
@@ -167,6 +191,12 @@ tests/test_model.py       # unit tests (unit conversions, SRMC equality at EUA*,
 
 * **Monthly fuel prices and an annual EUA average** stand in for the daily forward/spot prices that plants actually hedge against.
   Intra-month moves, hedging and contract structures are ignored, and Q3 2026 carries forward the H1-2026 EUA.
+  A monthly EUA series would be better, but no free, openly licensed one was found when checked (Oct 2026): Ember's
+  carbon-price charts use Montel data that is not downloadable, ICAP's downloadable weekly series is ICE data under
+  ICAP's terms of use, and EEX end-of-day files are a paid product. DEHSt's own auction reports remain a possible future source.
+* **The gas-share model is a correlational time-series fit on 93 monthly points.** The tanh scale was chosen by fit, the
+  crisis year 2022 has high leverage, and the regressors leave out heat demand, renewables, outages and imports, so the
+  coefficients describe association, not a causal switching elasticity.
 * **Generic plants.** Real fleets have a distribution of efficiencies, part-load penalties, start-up costs, minimum stable
   generation, must-run CHP heat obligations, gas transport/storage costs and coal logistics. The switching band shows only part of this spread.
 * **South African FOB coal + fixed freight** is a proxy for the API2 (CIF ARA) price that German plants reference. Freight

@@ -155,3 +155,39 @@ def gross_margin(ann: pd.DataFrame, out: Path):
     _footer(fig)
     fig.tight_layout(rect=(0, 0.02, 1, 1))
     fig.savefig(out); plt.close(fig)
+
+
+def gas_share_model(gm: pd.DataFrame, fit_row: pd.Series, fc: pd.DataFrame, scores: pd.DataFrame, out: Path,
+                    xlim=(-80, 40)):
+    """Left: monthly gas share vs SRMC gap with the fitted saturating curve (static spec, trend at sample mean).
+    Right: out-of-sample one-step predictions vs actual."""
+    from .regression import _frame, design, hac_ols
+    d = _frame(gm)
+    s = float(fit_row["tanh_scale_eur_mwh"])
+    X, names = design(d, "static", s)
+    beta = hac_ols(X, d["share"].to_numpy(), 3)["beta"]
+    fig, ax = plt.subplots(1, 2, figsize=(13, 4.8), gridspec_kw={"width_ratios": [1, 1.5]})
+    inside = d["gap"].between(*xlim)
+    sc = ax[0].scatter(d.loc[inside, "gap"], d.loc[inside, "share"], c=d.loc[inside, "year"], cmap="viridis", s=26,
+                       edgecolor="k", lw=0.3)
+    fig.colorbar(sc, ax=ax[0]).set_label("Year")
+    g = np.linspace(*xlim, 300)
+    yhat = beta[0] + beta[names.index("tanh_gap")] * np.tanh(g / s) + beta[names.index("trend")] * d["t"].mean()
+    ax[0].plot(g, yhat, color=PWR, lw=2, label=f"fit: share = a + b·tanh(gap/{s:.0f}) + trend (R² {fit_row['r2']:.2f})")
+    ax[0].axvline(0, color="k", lw=0.7)
+    n_out = int((~inside).sum())
+    ax[0].set_xlabel("Coal SRMC - gas SRMC (EUR/MWh_e)  ->  gas cheaper to the right")
+    ax[0].set_ylabel("Gas share of gas + hard coal (%)")
+    ax[0].set_title(f"Saturating fit (all 93 months; {n_out} months with gap < {xlim[0]} not shown)", fontsize=9)
+    ax[0].legend(fontsize=7.5, loc="lower right")
+    t = pd.PeriodIndex(fc["month"], freq="M").to_timestamp()
+    ax[1].plot(t, fc["actual"], color="k", lw=1.8, label="actual")
+    sc_ = scores.set_index("model")["rmse_pp"]
+    for col, c, ls in (("persistence", "grey", "--"), ("arx", PWR, "-"), ("static", GAS, ":")):
+        ax[1].plot(t, fc[col], color=c, ls=ls, lw=1.3, label=f"{col} (RMSE {sc_[col]:.1f} pp)")
+    ax[1].set_ylabel("Gas share of gas + hard coal (%)")
+    ax[1].set_title("Out-of-sample, one month ahead (expanding window, refitted monthly)", fontsize=9)
+    ax[1].legend(fontsize=7.5, ncol=2)
+    _footer(fig)
+    fig.tight_layout(rect=(0, 0.03, 1, 1))
+    fig.savefig(out); plt.close(fig)

@@ -15,7 +15,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "src"))
-from spreads import data, model, plots  # noqa: E402
+from spreads import data, model, plots, regression  # noqa: E402
 
 FIG, RES = ROOT / "figures", ROOT / "results"
 
@@ -62,7 +62,17 @@ def main(refresh: bool = False) -> dict:
     eua_needed_50 = {int(y): (float(sweep.index[np.argmax(sweep[y].values >= 0.5)]) if (sweep[y] >= 0.5).any() else None)
                      for y in sweep.columns}
 
+    # --- statistical model of gas share vs SRMC gap (explanatory fit + out-of-sample forecast check)
+    reg = regression.explanatory_table(gm)
+    fc = regression.expanding_forecast(gm, start=24)
+    scores = regression.forecast_scores(fc)
+    loyo = regression.leave_one_year_out(gm, "static")
+
     # --- outputs
+    reg.round(4).to_csv(RES / "gas_share_regression.csv", index=False)
+    fc.round(3).to_csv(RES / "gas_share_forecast_oos.csv", index=False)
+    scores.round(4).to_csv(RES / "gas_share_forecast_scores.csv", index=False)
+    loyo.round(3).to_csv(RES / "gas_share_leave_one_year_out.csv", index=False)
     m_out = m.copy(); m_out.index = m_out.index.astype(str)
     m_out.round(4).to_csv(RES / "monthly_srmc_switching.csv", index_label="month")
     ann.round(3).to_csv(RES / "annual_summary.csv")
@@ -82,6 +92,7 @@ def main(refresh: bool = False) -> dict:
     plots.gas_share_scatter(gm, rho, FIG / "gas_share_vs_srmc_gap.png")
     plots.eua_sweep(sweep, cfg["eua_eur_per_t"], FIG / "eua_sweep_gas_vs_coal.png")
     plots.gross_margin(ann, FIG / "spread_option_gross_margin.png")
+    plots.gas_share_model(gm, reg.set_index("spec").loc["static"], fc, scores, FIG / "gas_share_model.png")
 
     peak = m["switch_price"].idxmax()
     summary = {
@@ -97,6 +108,12 @@ def main(refresh: bool = False) -> dict:
         "gas_share_when_gas_cheaper": round(share_gas_cheaper, 3),
         "gas_share_when_coal_cheaper": round(share_coal_cheaper, 3),
         "eua_needed_for_gas_cheaper_in_50pct_of_months": eua_needed_50,
+        "gas_share_model": {
+            "explanatory": json.loads(reg.drop(columns="description").round(4).to_json(orient="records")),
+            "forecast_oos_months": f"{fc['month'].iloc[0]} .. {fc['month'].iloc[-1]} ({len(fc)})",
+            "forecast_scores": json.loads(scores.round(4).to_json(orient="records")),
+            "leave_one_year_out_static_rmse_pp": json.loads(loyo.set_index("year")["rmse_pp"].round(3).to_json()),
+        },
         "annual": json.loads(ann.round(3).to_json(orient="index")),
         "notes": ["2026 covers Jan-Sep; Q3 2026 uses the H1 2026 DEHSt EUA average (no published Q3 figure yet).",
                   "Spreads use monthly fuel prices and an annual-average EUA: intra-month fuel/carbon moves are ignored."],
@@ -106,6 +123,13 @@ def main(refresh: bool = False) -> dict:
     say(f"Spearman(gas share, coal-gas SRMC gap) = {rho:.3f}; vs (EUA - switch price) = {rho_switch:.3f}; within-year = {rho_within:.3f}")
     say(f"Gas share of gas+hard coal: {share_gas_cheaper:.1%} when gas cheaper vs {share_coal_cheaper:.1%} when coal cheaper")
     say(f"EUA needed for gas cheaper in >=50% of months: {eua_needed_50}")
+    for _, r in reg.iterrows():
+        say(f"Gas share model [{r['spec']}]: tanh scale {r['tanh_scale_eur_mwh']:.0f}, coef {r['coef_tanh_gap_pp']:.2f} pp "
+            f"(HAC se {r['hac_se']:.2f}, t {r['t_stat']:.1f}), R2 {r['r2']:.3f}, {r['pp_per_eur_at_0']:.3f} pp per EUR/MWh at gap 0, "
+            f"swing -20..+20 EUR/MWh {r['swing_pp_-20_+20']:.1f} pp")
+    say(f"Out-of-sample one-step forecasts {fc['month'].iloc[0]}..{fc['month'].iloc[-1]} (n={len(fc)}):")
+    say(scores.round(3).to_string(index=False))
+    say("Leave-one-year-out RMSE (static spec), pp: " + ", ".join(f"{int(r.year)}: {r.rmse_pp:.2f}" for r in loyo.itertuples()))
     (RES / "run_log.txt").write_text("\n".join(log) + "\n")
     return summary
 

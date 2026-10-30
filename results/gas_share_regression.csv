@@ -1,0 +1,5 @@
+spec,description,tanh_scale_eur_mwh,n,coef_tanh_gap_pp,hac_se,t_stat,r2,pp_per_eur_at_0,swing_pp_-20_+20,coef_share_lag
+static,gap + linear trend,30.0,93,12.2985,1.5804,7.7819,0.5959,0.4099,14.3347,
+static_seasonal,gap + month-of-year + trend,30.0,93,11.766,1.338,8.7934,0.6422,0.3922,13.714,
+within_year,gap + month-of-year + year fixed effects (explanatory only),30.0,93,10.9702,1.7744,6.1823,0.7294,0.3657,12.7865,
+arx,last month's share + gap + trend,30.0,92,7.1258,1.2239,5.822,0.7068,0.2375,8.3055,0.4707

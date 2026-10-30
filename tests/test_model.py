@@ -69,3 +69,53 @@ def test_hourly_spreads_and_sweep():
     assert (h["css"] == 100 - m["srmc_gas"].iloc[0]).all()
     sweep = model.eua_sweep(m, np.array([0.0, m["switch_price"].iloc[0] + 1, 500.0]))
     assert sweep[2024].tolist() == [0.0, 1.0, 1.0]
+
+
+# ---- gas-share regression / forecast ------------------------------------------------------------
+from spreads import regression  # noqa: E402
+
+
+def _synthetic_gm(n=60, seed=0):
+    rng = np.random.default_rng(seed)
+    idx = pd.period_range("2019-01", periods=n, freq="M")
+    gap = rng.normal(0, 25, n)
+    share = 0.55 + 0.10 * np.tanh(gap / 30) + rng.normal(0, 0.01, n)
+    return pd.DataFrame({"gas_share_gas_coal": share, "srmc_gap_coal_minus_gas": gap}, index=idx)
+
+
+def test_hac_ols_recovers_coefficients_and_hc0():
+    rng = np.random.default_rng(1)
+    X = np.column_stack([np.ones(500), rng.normal(size=500)])
+    y = 2.0 + 3.0 * X[:, 1] + rng.normal(0, 0.1, 500)
+    f = regression.hac_ols(X, y, lags=0)
+    assert np.allclose(f["beta"], [2.0, 3.0], atol=0.02)
+    e = f["resid"]; xtx_inv = np.linalg.inv(X.T @ X)
+    hc0 = xtx_inv @ (X * e[:, None]).T @ (X * e[:, None]) @ xtx_inv
+    assert np.allclose(f["se"], np.sqrt(np.diag(hc0)))
+    assert regression.hac_ols(X, y, lags=4)["se"][1] > 0
+
+
+def test_explanatory_fit_finds_synthetic_effect():
+    tab = regression.explanatory_table(_synthetic_gm()).set_index("spec")
+    assert tab.loc["static", "tanh_scale_eur_mwh"] == 30.0
+    assert tab.loc["static", "coef_tanh_gap_pp"] == pytest.approx(10.0, abs=1.0)
+    assert tab.loc["static", "t_stat"] > 10
+
+
+def test_expanding_forecast_uses_only_past_data():
+    gm = _synthetic_gm()
+    fc = regression.expanding_forecast(gm, start=24)
+    gm2 = gm.copy(); gm2.iloc[40:, 0] += 0.3          # change the future only
+    fc2 = regression.expanding_forecast(gm2, start=24)
+    k = 40 - 24
+    cols = ["persistence", "static", "static_seasonal", "arx", "ar1", "calendar_mean"]
+    assert np.allclose(fc.loc[:k - 1, cols], fc2.loc[:k - 1, cols])   # predictions for months < 40 unchanged
+    assert np.allclose(fc["persistence"].iloc[1:].to_numpy(), fc["actual"].iloc[:-1].to_numpy())
+    s = regression.forecast_scores(fc)
+    assert s.loc[s.model == "persistence", "rmse_vs_persistence"].iloc[0] == 0.0
+
+
+def test_leave_one_year_out_rejects_lagged_specs():
+    with pytest.raises(ValueError):
+        regression.leave_one_year_out(_synthetic_gm(), "arx")
+    assert len(regression.leave_one_year_out(_synthetic_gm(), "static")) == 5
