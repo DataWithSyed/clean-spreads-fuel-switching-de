@@ -1,0 +1,21 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Environments
+.venv/
+venv/
+env/
+.env
+
+# Downloaded raw data (re-fetched by `python run_all.py`; not redistributed)
+data/
+.cache/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

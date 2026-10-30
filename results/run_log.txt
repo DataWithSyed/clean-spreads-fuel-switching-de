@@ -1,0 +1,15 @@
+Fuel months: 2019-01 .. 2026-09 (93)
+Hourly prices: 67919 h, missing 0; generation: 67919 h
+      hours  baseload_price  mean_css  mean_cds  share_hours_css_pos  share_hours_cds_pos  gm_gas_eur_per_mw  gm_coal_eur_per_mw    eua  mean_switch_price  months_gas_cheaper  months  mean_gas_eur_mwh_th  mean_coal_eur_mwh_th
+year                                                                                                                                                                                                                             
+2019   8760           37.67     -4.01    -16.67                 0.39                 0.08           28872.54             5356.39  24.66              -1.03                  12      12                14.62                 10.74
+2020   8784           30.47     -1.17    -21.24                 0.48                 0.08           43864.67             7391.15  24.59             -16.24                  12      12                 9.60                  9.76
+2021   8760           96.85    -21.57      3.52                 0.26                 0.33           64782.94           211653.31  52.47             102.73                   6      12                47.14                 16.04
+2022   8760          235.45    -64.53     68.69                 0.26                 0.66          165442.80           786172.78  80.40             349.64                   0      12               132.10                 34.42
+2023   8760           95.18    -23.85    -29.54                 0.28                 0.22           59696.72            48452.16  83.68              72.33                   8      12                41.43                 17.39
+2024   8784           78.51    -19.51    -24.81                 0.26                 0.23           70814.72            69402.16  65.01              54.12                   8      12                34.60                 15.60
+2025   8760           89.32    -15.66    -16.66                 0.36                 0.33           88620.65            89975.99  73.86              72.12                   8      12                36.41                 13.61
+2026   6551          107.72    -25.32      0.88                 0.36                 0.55           69691.08           155682.06  76.02             128.72                   2       9                49.78                 13.19
+Spearman(gas share, coal-gas SRMC gap) = 0.522; vs (EUA - switch price) = 0.522; within-year = 0.641
+Gas share of gas+hard coal: 61.1% when gas cheaper vs 52.1% when coal cheaper
+EUA needed for gas cheaper in >=50% of months: {2019: 0.0, 2020: 0.0, 2021: 37.0, 2022: None, 2023: 67.0, 2024: 47.0, 2025: 66.0, 2026: 119.0}

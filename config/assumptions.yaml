@@ -1,0 +1,45 @@
+# Clean spark / clean dark spreads and the coal-to-gas fuel-switching CO2 price (Germany, DE-LU)
+# Source tags: IPCC2006 = IPCC 2006 Guidelines default · DEHSt = German auction results (EEX/DEHSt)
+#              WB = World Bank Pink Sheet definition · ILLUSTRATIVE = author assumption
+
+period:
+  start: "2019-01-01"          # first day (Europe/Berlin)
+  end: "2026-09-30"            # last day with World Bank monthly fuel prices (Pink Sheet, Oct 2026 release)
+
+market:
+  bidding_zone: "DE-LU"        # Energy-Charts day-ahead price
+  country: "de"                # Energy-Charts public net generation
+
+gas_plant:                     # combined-cycle gas turbine (CCGT)
+  efficiency: 0.50             # ILLUSTRATIVE: fleet-average CCGT, LHV-ish net
+  efficiency_low: 0.45         # ILLUSTRATIVE: older CCGT (switching band)
+  efficiency_high: 0.58        # ILLUSTRATIVE: new H-class CCGT (switching band)
+  emission_factor_t_per_mwh_th: 0.20196   # IPCC2006 Vol.2 Tab.2.2: natural gas 56.1 kgCO2/GJ x 3.6
+  vom_eur_per_mwh_e: 2.5       # ILLUSTRATIVE variable O&M
+  hub_to_plant_eur_per_mwh_th: 0.0   # ILLUSTRATIVE: TTF taken as delivered cost
+
+coal_plant:                    # hard-coal steam plant
+  efficiency: 0.38             # ILLUSTRATIVE: fleet-average hard-coal unit
+  efficiency_low: 0.35         # ILLUSTRATIVE: old unit (switching band)
+  efficiency_high: 0.45        # ILLUSTRATIVE: modern supercritical unit (switching band)
+  emission_factor_t_per_mwh_th: 0.34056   # IPCC2006 Vol.2 Tab.2.2: other bituminous coal 94.6 kgCO2/GJ x 3.6
+  calorific_kcal_per_kg: 6000  # WB: Richards Bay coal is NAR 6,000 kcal/kg
+  freight_usd_per_t: 12.0      # ILLUSTRATIVE: FOB Richards Bay -> ARA -> plant (freight + handling)
+  vom_eur_per_mwh_e: 4.0       # ILLUSTRATIVE variable O&M
+
+# Annual volume-weighted average EUA auction price for Germany (EUR/tCO2), DEHSt "Versteigerungsergebnisse seit 2012"
+# (source: EEX, DEHSt) and DEHSt quarterly auction reports 2026 Q1/Q2 (H1 2026 VWAP 76.02).
+# 2026 Q3 has no published DEHSt figure yet: the H1 2026 value is carried forward (flagged in outputs).
+eua_eur_per_t:
+  2019: 24.66
+  2020: 24.59
+  2021: 52.47
+  2022: 80.40
+  2023: 83.68
+  2024: 65.01
+  2025: 73.86
+  2026: 76.02
+
+analysis:
+  eua_sweep_max: 150           # EUR/t, for the sensitivity curve
+  eua_sweep_step: 1

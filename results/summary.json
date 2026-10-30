@@ -1,0 +1,172 @@
+{
+  "period": "2019-01-01 .. 2026-09-30",
+  "assumptions": {
+    "eta_gas": 0.5,
+    "eta_coal": 0.38
+  },
+  "carbon_intensity_t_per_mwh_e": {
+    "gas": 0.4039,
+    "coal": 0.8962
+  },
+  "switch_price_peak": {
+    "month": "2022-08",
+    "eur_per_t": 738.8
+  },
+  "switch_price_min": {
+    "month": "2020-05",
+    "eur_per_t": -31.7
+  },
+  "months_gas_cheaper": {
+    "n": 56,
+    "of": 93
+  },
+  "spearman_gas_share_vs_srmc_gap": 0.522,
+  "spearman_gas_share_vs_eua_minus_switch": 0.522,
+  "spearman_within_year_demeaned": 0.641,
+  "gas_share_when_gas_cheaper": 0.611,
+  "gas_share_when_coal_cheaper": 0.521,
+  "eua_needed_for_gas_cheaper_in_50pct_of_months": {
+    "2019": 0.0,
+    "2020": 0.0,
+    "2021": 37.0,
+    "2022": null,
+    "2023": 67.0,
+    "2024": 47.0,
+    "2025": 66.0,
+    "2026": 119.0
+  },
+  "annual": {
+    "2019": {
+      "hours": 8760,
+      "baseload_price": 37.667,
+      "mean_css": -4.006,
+      "mean_cds": -16.671,
+      "share_hours_css_pos": 0.39,
+      "share_hours_cds_pos": 0.08,
+      "gm_gas_eur_per_mw": 28872.54,
+      "gm_coal_eur_per_mw": 5356.391,
+      "eua": 24.66,
+      "mean_switch_price": -1.028,
+      "months_gas_cheaper": 12,
+      "months": 12,
+      "mean_gas_eur_mwh_th": 14.624,
+      "mean_coal_eur_mwh_th": 10.736
+    },
+    "2020": {
+      "hours": 8784,
+      "baseload_price": 30.471,
+      "mean_css": -1.166,
+      "mean_cds": -21.242,
+      "share_hours_css_pos": 0.481,
+      "share_hours_cds_pos": 0.075,
+      "gm_gas_eur_per_mw": 43864.667,
+      "gm_coal_eur_per_mw": 7391.145,
+      "eua": 24.59,
+      "mean_switch_price": -16.243,
+      "months_gas_cheaper": 12,
+      "months": 12,
+      "mean_gas_eur_mwh_th": 9.596,
+      "mean_coal_eur_mwh_th": 9.761
+    },
+    "2021": {
+      "hours": 8760,
+      "baseload_price": 96.85,
+      "mean_css": -21.569,
+      "mean_cds": 3.517,
+      "share_hours_css_pos": 0.26,
+      "share_hours_cds_pos": 0.332,
+      "gm_gas_eur_per_mw": 64782.936,
+      "gm_coal_eur_per_mw": 211653.313,
+      "eua": 52.47,
+      "mean_switch_price": 102.734,
+      "months_gas_cheaper": 6,
+      "months": 12,
+      "mean_gas_eur_mwh_th": 47.136,
+      "mean_coal_eur_mwh_th": 16.035
+    },
+    "2022": {
+      "hours": 8760,
+      "baseload_price": 235.446,
+      "mean_css": -64.528,
+      "mean_cds": 68.691,
+      "share_hours_css_pos": 0.259,
+      "share_hours_cds_pos": 0.662,
+      "gm_gas_eur_per_mw": 165442.796,
+      "gm_coal_eur_per_mw": 786172.776,
+      "eua": 80.4,
+      "mean_switch_price": 349.642,
+      "months_gas_cheaper": 0,
+      "months": 12,
+      "mean_gas_eur_mwh_th": 132.099,
+      "mean_coal_eur_mwh_th": 34.418
+    },
+    "2023": {
+      "hours": 8760,
+      "baseload_price": 95.175,
+      "mean_css": -23.853,
+      "mean_cds": -29.536,
+      "share_hours_css_pos": 0.281,
+      "share_hours_cds_pos": 0.224,
+      "gm_gas_eur_per_mw": 59696.722,
+      "gm_coal_eur_per_mw": 48452.165,
+      "eua": 83.68,
+      "mean_switch_price": 72.329,
+      "months_gas_cheaper": 8,
+      "months": 12,
+      "mean_gas_eur_mwh_th": 41.433,
+      "mean_coal_eur_mwh_th": 17.389
+    },
+    "2024": {
+      "hours": 8784,
+      "baseload_price": 78.512,
+      "mean_css": -19.513,
+      "mean_cds": -24.806,
+      "share_hours_css_pos": 0.261,
+      "share_hours_cds_pos": 0.232,
+      "gm_gas_eur_per_mw": 70814.722,
+      "gm_coal_eur_per_mw": 69402.164,
+      "eua": 65.01,
+      "mean_switch_price": 54.12,
+      "months_gas_cheaper": 8,
+      "months": 12,
+      "mean_gas_eur_mwh_th": 34.599,
+      "mean_coal_eur_mwh_th": 15.601
+    },
+    "2025": {
+      "hours": 8760,
+      "baseload_price": 89.322,
+      "mean_css": -15.659,
+      "mean_cds": -16.66,
+      "share_hours_css_pos": 0.356,
+      "share_hours_cds_pos": 0.334,
+      "gm_gas_eur_per_mw": 88620.647,
+      "gm_coal_eur_per_mw": 89975.992,
+      "eua": 73.86,
+      "mean_switch_price": 72.121,
+      "months_gas_cheaper": 8,
+      "months": 12,
+      "mean_gas_eur_mwh_th": 36.41,
+      "mean_coal_eur_mwh_th": 13.61
+    },
+    "2026": {
+      "hours": 6551,
+      "baseload_price": 107.718,
+      "mean_css": -25.321,
+      "mean_cds": 0.876,
+      "share_hours_css_pos": 0.356,
+      "share_hours_cds_pos": 0.554,
+      "gm_gas_eur_per_mw": 69691.079,
+      "gm_coal_eur_per_mw": 155682.06,
+      "eua": 76.02,
+      "mean_switch_price": 128.724,
+      "months_gas_cheaper": 2,
+      "months": 9,
+      "mean_gas_eur_mwh_th": 49.784,
+      "mean_coal_eur_mwh_th": 13.186
+    }
+  },
+  "notes": [
+    "2026 covers Jan-Sep; Q3 2026 uses the H1 2026 DEHSt EUA average (no published Q3 figure yet).",
+    "Spreads use monthly fuel prices and an annual-average EUA: intra-month fuel/carbon moves are ignored."
+  ]
+}
