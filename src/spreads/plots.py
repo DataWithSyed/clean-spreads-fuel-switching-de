@@ -191,3 +191,45 @@ def gas_share_model(gm: pd.DataFrame, fit_row: pd.Series, fc: pd.DataFrame, scor
     _footer(fig)
     fig.tight_layout(rect=(0, 0.03, 1, 1))
     fig.savefig(out); plt.close(fig)
+
+
+def dispatch_value(tab: pd.DataFrame, sens: pd.DataFrame, out: Path):
+    """Top: free-switching bound vs constrained perfect-foresight vs day-by-day commitment, per unit and year.
+    Bottom-left: share of the bound captured. Bottom-right: start-cost sensitivity of starts per year (CCGT)."""
+    fig = plt.figure(figsize=(13, 7.6))
+    gs = fig.add_gridspec(2, 2, height_ratios=[1.15, 1])
+    units = list(dict.fromkeys(tab["unit"]))
+    for j, u in enumerate(units):
+        ax = fig.add_subplot(gs[0, j])
+        d = tab[tab["unit"] == u].set_index("year")
+        x = np.arange(len(d))
+        col = GAS if j == 0 else COAL
+        ax.bar(x - 0.27, d["free_switching_bound"] / 1e3, 0.27, color=col, alpha=0.3, label="free-switching bound")
+        ax.bar(x, d["pf_gross_margin"] / 1e3, 0.27, color=col, alpha=0.75, label="constrained, perfect foresight (year)")
+        ax.bar(x + 0.27, d["day_gross_margin"] / 1e3, 0.27, color=col, hatch="//", edgecolor="white", alpha=0.95,
+               label="constrained, day-by-day commitment")
+        ax.set_xticks(x, [f"{y}" + ("*" if y == d.index[-1] else "") for y in d.index])
+        ax.set_ylabel("k EUR / MW")
+        ax.set_title(f"{u}: gross margin after start costs")
+        if d["free_switching_bound"].max() > 4 * d["free_switching_bound"].median():
+            ax.set_yscale("log")
+        ax.legend(frameon=False, fontsize=7.5, loc="upper left")
+    ax = fig.add_subplot(gs[1, 0])
+    for j, u in enumerate(units):
+        d = tab[tab["unit"] == u]
+        col = GAS if j == 0 else COAL
+        ax.plot(d["year"], 100 * d["pf_capture"], "o-", color=col, label=f"{u}, perfect foresight")
+        ax.plot(d["year"], 100 * d["day_capture"], "s--", color=col, alpha=0.7, label=f"{u}, day-by-day")
+    ax.set_ylabel("% of free-switching bound captured"); ax.set_ylim(0, 100)
+    ax.set_title("How much of the hourly spread option a real unit can capture")
+    ax.legend(frameon=False, fontsize=7.5, ncol=2, loc="lower right")
+    ax = fig.add_subplot(gs[1, 1])
+    s = sens[sens["unit"] == units[0]]
+    for fct, g in s.groupby("start_cost_factor"):
+        ax.plot(g["year"], g["starts"], "o-", label=f"start C&M x{fct:g}")
+    ax.set_ylabel("starts per year (perfect foresight)")
+    ax.set_title(f"{units[0]}: starts vs. start wear-and-tear cost")
+    ax.legend(frameon=False, fontsize=7.5, ncol=2)
+    _footer(fig, "*2026 = Jan-Sep. Plant parameters illustrative; start C&M from Kumar et al. (2012), NREL.")
+    fig.tight_layout(rect=(0, 0.02, 1, 1))
+    fig.savefig(out); plt.close(fig)

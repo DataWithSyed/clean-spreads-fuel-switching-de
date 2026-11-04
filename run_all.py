@@ -15,7 +15,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "src"))
-from spreads import data, model, plots, regression  # noqa: E402
+from spreads import data, dispatch, model, plots, regression  # noqa: E402
 
 FIG, RES = ROOT / "figures", ROOT / "results"
 
@@ -68,6 +68,16 @@ def main(refresh: bool = False) -> dict:
     scores = regression.forecast_scores(fc)
     loyo = regression.leave_one_year_out(gm, "static")
 
+    # --- dispatch-constrained value (min stable generation, part load, min up/down, start costs)
+    dcfg = cfg["dispatch"]
+    ug = dispatch.unit_from_cfg(cfg["gas_plant"], dcfg["gas"], "CCGT")
+    uc = dispatch.unit_from_cfg(cfg["coal_plant"], dcfg["coal"], "Hard coal")
+    dtab = dispatch.annual_dispatch_table(h, m, {"CCGT": (ug, "gas_eur_mwh_th"), "Hard coal": (uc, "coal_eur_mwh_th")})
+    dsens = pd.concat([dispatch.start_cost_sensitivity(h, m, ug, "gas_eur_mwh_th", dcfg["start_cost_sensitivity"]),
+                       dispatch.start_cost_sensitivity(h, m, uc, "coal_eur_mwh_th", dcfg["start_cost_sensitivity"])])
+    dtab.round(4).to_csv(RES / "dispatch_constrained_value.csv", index=False)
+    dsens.round(2).to_csv(RES / "dispatch_start_cost_sensitivity.csv", index=False)
+
     # --- outputs
     reg.round(4).to_csv(RES / "gas_share_regression.csv", index=False)
     fc.round(3).to_csv(RES / "gas_share_forecast_oos.csv", index=False)
@@ -93,6 +103,7 @@ def main(refresh: bool = False) -> dict:
     plots.eua_sweep(sweep, cfg["eua_eur_per_t"], FIG / "eua_sweep_gas_vs_coal.png")
     plots.gross_margin(ann, FIG / "spread_option_gross_margin.png")
     plots.gas_share_model(gm, reg.set_index("spec").loc["static"], fc, scores, FIG / "gas_share_model.png")
+    plots.dispatch_value(dtab, dsens, FIG / "dispatch_constrained_value.png")
 
     peak = m["switch_price"].idxmax()
     summary = {
@@ -114,6 +125,7 @@ def main(refresh: bool = False) -> dict:
             "forecast_scores": json.loads(scores.round(4).to_json(orient="records")),
             "leave_one_year_out_static_rmse_pp": json.loads(loyo.set_index("year")["rmse_pp"].round(3).to_json()),
         },
+        "dispatch_constrained": json.loads(dtab.round(4).to_json(orient="records")),
         "annual": json.loads(ann.round(3).to_json(orient="index")),
         "notes": ["2026 covers Jan-Sep; Q3 2026 uses the H1 2026 DEHSt EUA average (no published Q3 figure yet).",
                   "Spreads use monthly fuel prices and an annual-average EUA: intra-month fuel/carbon moves are ignored."],
@@ -130,6 +142,9 @@ def main(refresh: bool = False) -> dict:
     say(f"Out-of-sample one-step forecasts {fc['month'].iloc[0]}..{fc['month'].iloc[-1]} (n={len(fc)}):")
     say(scores.round(3).to_string(index=False))
     say("Leave-one-year-out RMSE (static spec), pp: " + ", ".join(f"{int(r.year)}: {r.rmse_pp:.2f}" for r in loyo.itertuples()))
+    say("Dispatch-constrained 1 MW unit (EUR/MW; bound = free switching, pf = perfect-foresight DP, day = day-by-day):")
+    say(dtab[["unit", "year", "free_switching_bound", "pf_gross_margin", "day_gross_margin", "pf_starts", "day_starts",
+              "pf_run_hours", "pf_capture", "day_capture"]].round(3).to_string(index=False))
     (RES / "run_log.txt").write_text("\n".join(log) + "\n")
     return summary
 

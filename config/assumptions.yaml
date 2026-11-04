@@ -43,3 +43,24 @@ eua_eur_per_t:
 analysis:
   eua_sweep_max: 150           # EUR/t, for the sensitivity curve
   eua_sweep_step: 1
+
+# Dispatch-constrained valuation of a 1 MW unit (src/spreads/dispatch.py). All ILLUSTRATIVE, except the start
+# wear-and-tear costs, which are the median WARM-start capital & maintenance costs (lower bound) from
+# Kumar et al. (2012), "Power Plant Cycling Costs", NREL/SR-5500-55433, Table 1-1 (2011 USD per MW, used here
+# as EUR per MW without inflation or FX adjustment, i.e. an order-of-magnitude value; see the sensitivity).
+dispatch:
+  gas:
+    min_stable_generation: 0.45     # ILLUSTRATIVE share of capacity
+    part_load_efficiency_drop: 0.06 # ILLUSTRATIVE: 50 % at full load -> 44 % at min stable generation
+    min_up_h: 4                     # ILLUSTRATIVE
+    min_down_h: 4                   # ILLUSTRATIVE
+    start_cost_cm_eur_per_mw: 55    # Kumar et al. 2012, gas CC warm start, median lower bound ($55/MW)
+    start_fuel_mwh_th_per_mw: 1.5   # ILLUSTRATIVE start-up fuel (priced at TTF + CO2)
+  coal:
+    min_stable_generation: 0.40     # ILLUSTRATIVE
+    part_load_efficiency_drop: 0.04 # ILLUSTRATIVE: 38 % -> 34 %
+    min_up_h: 8                     # ILLUSTRATIVE
+    min_down_h: 8                   # ILLUSTRATIVE
+    start_cost_cm_eur_per_mw: 65    # Kumar et al. 2012, large sub-critical coal warm start, median lower bound ($65/MW)
+    start_fuel_mwh_th_per_mw: 4.0   # ILLUSTRATIVE start-up fuel (priced at delivered coal + CO2)
+  start_cost_sensitivity: [0.0, 0.5, 1.0, 2.0, 4.0]

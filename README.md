@@ -12,7 +12,10 @@ gas / hard-coal generation. From these it computes:
 * a **reality check** that tests whether the actual German merit order (gas share of gas + hard-coal output) follows the modelled SRMC gap,
 * a **statistical model of the gas share vs. the spread** (saturating regression with HAC errors) and an honest
   **out-of-sample forecast test** against naive baselines,
-* the **hour-of-day shape** of spreads (solar cannibalisation) and a simple hourly **spread-option gross margin**.
+* the **hour-of-day shape** of spreads (solar cannibalisation) and a simple hourly **spread-option gross margin**,
+* a **dispatch-constrained valuation** of a 1 MW CCGT and hard-coal unit (minimum stable generation, part-load
+  efficiency, minimum up/down times, start costs) by exact dynamic programming, under perfect foresight and under
+  day-by-day commitment, to show how much of that free-switching margin a real unit can actually capture.
 
 > Plant parameters (efficiencies, VOM, coal freight) are **illustrative fleet assumptions**, not data for a specific unit.
 > Everything else comes from the cited public sources. This is an analysis/teaching project. It is not a trading signal
@@ -62,6 +65,16 @@ flexible 1 MW unit (no start costs, ramping or outages), so it is an upper bound
   persistence (6.38 pp), and gap-only models are worse (7.46 pp). So the spread is a real driver, but month to month
   the share is mostly persistent and the rest is driven by things this data does not contain (CHP heat demand,
   outages, wind/solar, imports, closures).
+* **A real CCGT captures only 53–77 % of the free-switching margin, and less since 2023.** With minimum stable
+  generation (CCGT 45 %, coal 40 %), part-load efficiency loss, minimum up/down times (4 h / 8 h) and start costs
+  (NREL warm-start wear-and-tear + start fuel and its CO2), the perfect-foresight CCGT gross margin is **127.7 k€/MW**
+  in 2022 (77 % of the 165.4 k€/MW bound) but only **31.8–53.9 k€/MW in 2023–2025 (53–61 %)**. Committing one
+  day at a time without looking past midnight loses another 1–8 pp (2.6–3.9 pp in 2023–2026; 2025: **50.4 k€/MW**, 57 %). The optimal
+  CCGT schedule went from **39–47 starts a year in 2019–2022 to 95–102 in 2024–2025**, with the average run falling
+  from 38–94 h to 22–30 h per start, and start costs now take **20–25 %** of its energy margin (9–17 % before 2023).
+  Coal kept 94–96 % of its bound in 2021–2022, when spreads were wide and it ran long blocks (150–160 h per start), but 44–61 % in 2023–2025. Doubling or halving the
+  start cost changes the 2025 CCGT margin by −7.5 % / +5.9 % but the number of starts by −47 % / +36 % (54 / 139 vs 102),
+  so the start-cost assumption mainly moves *how* the unit runs, less *what it earns*.
 * **Solar is reshaping the spreads.** In 2026 the average midday (13:00) clean spark spread is about **−97 €/MWh**, while the evening
   peak (20:00) is about **+38 €/MWh**. Thermal value now sits in the evening ramp, which is also where BESS competes.
 
@@ -84,6 +97,9 @@ flexible 1 MW unit (no start costs, ramping or outages), so it is an upper bound
 
 **Statistical model of the gas share and out-of-sample forecast check**
 ![Gas share model](figures/gas_share_model.png)
+
+**Dispatch-constrained value vs. the free-switching bound** (top), share captured and CCGT starts vs. start cost (bottom)
+![Dispatch-constrained value](figures/dispatch_constrained_value.png)
 
 **Spreads by hour of day** (solar cannibalisation of midday hours)
 ![Hour of day](figures/spreads_hour_of_day.png)
@@ -124,6 +140,17 @@ switching price    EUA* = (F_gas − F_coal) / (c_coal − c_gas)      gas is ch
   fuel and carbon prices). Baselines: persistence (last month), AR(1), same-calendar-month mean. A leave-one-year-out
   check of the trend model is also written (`results/gas_share_leave_one_year_out.csv`; RMSE 4.2–11.1 pp by year, worst 2020).
 
+* **Dispatch-constrained value** (`src/spreads/dispatch.py`). Per MW of capacity, the unit is either off or on
+  between minimum stable generation P_min and full load. Heat input is linear in output: at P_min the efficiency is
+  η_full − Δη, and the incremental heat rate above P_min is set so that full load has η_full. When on, output is
+  P_min, or full load if the price exceeds the incremental cost (fuel + CO2 + VOM); this is optimal for a
+  linear cost curve. A start costs wear-and-tear C&M (€/MW) plus start fuel (MWh_th/MW) priced at fuel + CO2.
+  The commitment state (on for k hours / off for k hours, up to the minimum up/down time) is solved exactly by
+  backward dynamic programming over each calendar year (**perfect foresight**). In the **day-by-day** case each
+  Europe/Berlin delivery day (23/25 h on DST days) is optimised using only that day's prices, with the state and
+  counters carried over midnight and no value placed on later days. The free-switching bound is the existing
+  "flex GM": full-load clean spread summed over positive hours. Tests check the DP against brute-force enumeration.
+
 ## Assumptions
 
 | Parameter | Value | Source |
@@ -137,6 +164,11 @@ switching price    EUA* = (F_gas − F_coal) / (c_coal − c_gas)      gas is ch
 | VOM gas / coal | 2.5 / 4.0 €/MWh_e | ILLUSTRATIVE |
 | Gas hub-to-plant cost | 0 €/MWh_th (TTF = delivered) | ILLUSTRATIVE |
 | EUA | annual German average auction price (table above) | DEHSt / EEX |
+| Min stable generation CCGT / coal | 45 % / 40 % of capacity | ILLUSTRATIVE |
+| Part-load efficiency drop at P_min CCGT / coal | 6 pp (50 → 44 %) / 4 pp (38 → 34 %) | ILLUSTRATIVE |
+| Min up / min down time CCGT / coal | 4 h / 4 h, 8 h / 8 h | ILLUSTRATIVE |
+| Start wear-and-tear cost CCGT / coal | 55 / 65 € per MW per start | Kumar et al. (2012), *Power Plant Cycling Costs*, NREL/SR-5500-55433, Table 1-1: median lower-bound warm-start C&M cost, gas CC and large sub-critical coal (2011 $/MW, used as €/MW without adjustment; sensitivity ×0–4) |
+| Start fuel CCGT / coal | 1.5 / 4.0 MWh_th per MW per start | ILLUSTRATIVE |
 
 All values are in [`config/assumptions.yaml`](config/assumptions.yaml). Edit it and re-run to test your own fleet.
 
@@ -166,13 +198,14 @@ python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\act
 pip install -r requirements.txt
 python run_all.py              # first run downloads ~45 MB into data/raw/ (cached), then ~5 s
 python run_all.py --refresh    # force re-download
-pytest -q                      # 11 unit tests
+pytest -q                      # 20 unit tests
 ```
 
 Outputs: `results/summary.json` (headline numbers), `results/annual_summary.csv`, `results/monthly_srmc_switching.csv`,
 `results/monthly_generation_vs_spread.csv`, `results/css_hour_of_day.csv`, `results/cds_hour_of_day.csv`,
 `results/gas_share_regression.csv`, `results/gas_share_forecast_oos.csv`, `results/gas_share_forecast_scores.csv`,
-`results/gas_share_leave_one_year_out.csv`, `results/run_log.txt`, and the eight figures in `figures/`.
+`results/gas_share_leave_one_year_out.csv`, `results/dispatch_constrained_value.csv`,
+`results/dispatch_start_cost_sensitivity.csv`, `results/run_log.txt`, and the nine figures in `figures/`.
 
 ## Repository layout
 
@@ -182,9 +215,11 @@ src/spreads/
   data.py                 # download + cache: Energy-Charts, World Bank Pink Sheet, ECB FX
   model.py                # SRMC, clean spreads, switching price, EUA sweep, generation check
   regression.py           # gas share vs SRMC gap: HAC regression, expanding-window forecast test
+  dispatch.py             # unit commitment DP: min stable gen, part load, min up/down, start costs
   plots.py                # figures
 run_all.py                # end-to-end pipeline
-tests/test_model.py       # unit tests (unit conversions, SRMC equality at EUA*, band ordering, sweep)
+tests/test_model.py       # unit tests (unit conversions, SRMC equality at EUA*, band ordering, sweep, regression)
+tests/test_dispatch.py    # DP vs brute force, bound ordering, part-load curve, DST day blocks
 ```
 
 ## Limitations
@@ -201,8 +236,10 @@ tests/test_model.py       # unit tests (unit conversions, SRMC equality at EUA*,
   generation, must-run CHP heat obligations, gas transport/storage costs and coal logistics. The switching band shows only part of this spread.
 * **South African FOB coal + fixed freight** is a proxy for the API2 (CIF ARA) price that German plants reference. Freight
   actually varies over time.
-* **Gross margin is an upper bound.** It assumes perfect foresight, no start costs and full availability, and it ignores
-  intraday/balancing markets and capacity payments.
+* **Gross margin.** The "flex GM" is an upper bound (free switching, perfect foresight). The dispatch-constrained
+  values are more realistic but still use day-ahead prices only, full availability (no outages or maintenance), one
+  start type (no hot/warm/cold distinction), no ramp limits, no CHP heat obligation, and monthly fuel / annual EUA
+  prices. They ignore intraday, balancing and capacity revenues, and the plant parameters are illustrative.
 * **The generation check is correlational.** Gas share is also driven by CHP heat demand, outages, coal phase-out
   (reserve and closures), grid constraints and imports. The within-year ρ partly controls for structural trends but is not causal.
 * Lignite is excluded from the switching analysis.
